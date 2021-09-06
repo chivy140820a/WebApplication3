@@ -1,0 +1,190 @@
+﻿@model IEnumerable<WebApplication3.Models.APICoronavirusCountry>
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@section Scripts{
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+        google.charts.load('current', {
+            packages: ['corechart', 'bar']
+        });
+        google.charts.setOnLoadCallback(LoadData);
+
+        function LoadData() {
+            $.ajax({
+                url: '/NCOV/GetAll',
+                dataType: "json",
+                type: "GET",
+                error: function (xhr, status, error) {
+                    var err = eval("(" + xhr.responseText + ")");
+                    toastr.error(err.message);
+                },
+                success: function (res) {
+                    PopulationChart(res.data);
+                    return false;
+                }
+            });
+            return false;
+        }
+
+        function PopulationChart(data) {
+            var dataArray = [
+                ['Quốc gia', 'Số ca mắc']
+            ];
+            $.each(data, function (i, item) {
+                dataArray.push([item.country, item.cases]);
+            });
+            var data = google.visualization.arrayToDataTable(dataArray);
+            var options = {
+                title: 'Covid trên thế giới',
+                chartArea: {
+                    width: '50%',
+                },
+                colors: ['#b0120a', '#7b1fa2'],
+                hAxis: {
+                    title: 'City',
+                    minValue: 0
+                },
+                vAxis: {
+                    title: 'Total'
+                }
+            };
+            var chart = new google.visualization.BarChart(document.getElementById('chart_div'));
+            chart.draw(data, options);
+            return false;
+        }
+    </script>
+    <script type="text/javascript">
+
+        //Set the Latitude and Longitude of the Map
+        var myAddress = new google.maps.LatLng(16.4596343, 95.454139);
+
+        //Create Options or set different Characteristics of Google Map
+        var mapOptions = {
+            center: myAddress,
+            zoom: 100,
+            minZoom: 100,
+            mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+
+        //Display the Google map in the div control with the defined Options
+        var map = new google.maps.Map(document.getElementById("myDiv"), mapOptions);
+            $.ajax({
+                url: '/NCOV/GetAllLatLong',
+                dataType: "json",
+                type: "GET",
+                success: function (res) {
+                    if (res.status == true) {
+                        var list = res.data;
+                        $.each(list, function (i, item) {
+                            var mycontry = new google.maps.LatLng(item.countryInfo.lat, item.countryInfo.long);
+                            var marker = new google.maps.Marker({
+                                position: mycontry,
+                                animation: google.maps.Animation.BOUNCE,
+                            });
+                            marker.setMap(map);
+
+                        })
+                    }
+                }
+            });
+
+    </script>
+
+}
+<div id="myDiv" style="width:100%;height:400px;"></div>
+
+<div id="chart_div"></div>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                Flag
+            <th>
+                Country
+            </th>
+            <th>
+                Cases
+            </th>
+            <th>
+                TodayCases
+            </th>
+            <th>
+                Deaths
+            </th>
+            <th>
+                TodayDeaths
+            </th>
+            <th>
+                Recovered
+            </th>
+            <th>
+                TodayRecovered
+            </th>
+            <th>
+                Active
+            </th>
+            <th>
+                Population
+            </th>
+            <th>
+                Continent
+            </th>
+            <th>
+                Tests
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    <img src="@item.CountryInfo.Flag" alt="Girl in a jacket" width="100" height="100">
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Country)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Cases)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.TodayCases)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Deaths)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.TodayDeaths)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Recovered)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.TodayRecovered)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Active)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Population)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Continent)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Tests)
+                </td>
+                <td>
+                    @Html.ActionLink("Edit", "Edit", new { /* id=item.PrimaryKey */ }) |
+                    @Html.ActionLink("Details", "Details", new { /* id=item.PrimaryKey */ }) |
+                    @Html.ActionLink("Delete", "Delete", new { /* id=item.PrimaryKey */ })
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
